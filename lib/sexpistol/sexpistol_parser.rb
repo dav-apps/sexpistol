@@ -1,11 +1,11 @@
-require 'strscan'	
+require 'strscan'
 
 class SexpistolParser < StringScanner
 
   def initialize(string)
     unless(string.count('(') == string.count(')'))
       raise Exception, "Missing closing parentheses"
-    end
+		end
     super(string)
   end
 
@@ -22,7 +22,7 @@ class SexpistolParser < StringScanner
           when '(' then exp << [:quote].concat([parse])
           else exp << [:quote, @token]
           end
-        when String, Fixnum, Float, Symbol 
+				when String, Regexp, Fixnum, Float, Symbol
           exp << @token
         when nil 
           break
@@ -35,13 +35,16 @@ class SexpistolParser < StringScanner
     skip(/\s+/)
     return nil if(eos?)
     
-    @token = 
+		@token = 
     # Match parentheses
-    if scan(/[\(\)]/)      
-      matched
+		if scan(/[\(\)]/)
+			matched
     # Match a string literal
-    elsif scan(/"([^"\\]|\\.)*"/)
-      eval(matched)
+		elsif scan(/("|')([^"\\]|\\.)*("|')/)
+			eval(matched)
+		# Match a regex literal
+		elsif scan(/\/.*\//)
+			Regexp.new(matched[1..-2])
     # Match a float literal
     elsif scan(/[\-\+]? [0-9]+ ((e[0-9]+) | (\.[0-9]+(e[0-9]+)?))/x)
       matched.to_f
